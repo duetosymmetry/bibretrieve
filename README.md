@@ -47,9 +47,8 @@ The following backends are included in the repository.
 
 Backend | Key
 --------|----
-[ArXiv](http://adsabs.harvard.edu) | "arxiv"
+[ADS](http://adsabs.harvard.edu) | "ads"
 [MathSciNet](http://www.ams.org/mathscinet) | "msn"
-[MrLookup](http://www.ams.org/mrlookup) | "mrl"
 [Citebase](http://www.citebase.org) | "citebase"
 [Inspire](http://inspirehep.net) | "inspire"
 [Zentralblatt MATH](http://www.zentralblatt-math.org/zmath) | "zbm"
