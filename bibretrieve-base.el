@@ -55,30 +55,16 @@
     (mm-url-insert-file-contents url))
   buffer)
 
-(defun bibretrieve-backend-msn (author title)
+(defun bibretrieve-backend-msn (query)
   (let* ((pairs `(("bdlback" . "r=1")
 		  ("dr" . "all")
 		  ("l" . "20")
-		  ("pg3" . "TI")
-		  ("s3" . ,title)
-		  ("pg4" . "ICN")
-		  ("s4" . ,author)
+		  ("pg3" . "ALLF")
+		  ("s3" . ,query)
 		  ("fn" . "130")
 		  ("fmt" . "bibtex")
 		  ("bdlall" . "Retrieve+All")))
 	 (url (concat "http://www.ams.org/mathscinet/search/publications.html?" (mm-url-encode-www-form-urlencoded pairs)))
-	 (buffer (bibretrieve-http url)))
-    (with-current-buffer buffer
-      (goto-char (point-min))
-      (while (re-search-forward "URL = {https://doi.org/" nil t)
-	(replace-match "DOI = {"))
-      buffer)))
-
-(defun bibretrieve-backend-mrl (author title)
-  (let* ((pairs `(("ti" . ,title)
-		  ("au" . ,author)
-		  ("format" . "bibtex")))
-    (url (concat "http://www.ams.org/mrlookup?" (mm-url-encode-www-form-urlencoded pairs)))
 	 (buffer (bibretrieve-http url)))
     (with-current-buffer buffer
       (goto-char (point-min))
@@ -99,8 +85,8 @@
               (push (match-string 0) matches)))))
       matches)))
 
-(defun bibretrieve-backend-zbm (author title)
-  (let* ((url (concat "https://zbmath.org/?" (mm-url-encode-www-form-urlencoded `(("au" . ,author) ("ti" . ,title)))))
+(defun bibretrieve-backend-zbm (query)
+  (let* ((url (concat "https://zbmath.org/?" (mm-url-encode-www-form-urlencoded `(("q" . ,query)))))
 	 (buffer (bibretrieve-http url))
 	 (list-of-bib-urls (bibretrieve-matches-in-buffer "bibtex/[a-zA-Z0-9.]*.bib" buffer))
 	 bib-url)
@@ -113,58 +99,14 @@
 	)
       buffer)))
 
-(defun bibretrieve-backend-arxiv (author title)
-  (let* ((url (concat "http://adsabs.harvard.edu/cgi-bin/nph-abs_connect?"
-	  (mm-url-encode-www-form-urlencoded `(("db_key" . "PRE")
-				       ("aut_req" . "YES")
-				       ("aut_logic" . "SIMPLE")
-				       ("author" . ,author)
-				       ("ttl_req" . "YES")
-				       ("ttl_logic" . "AND")
-				       ("title" . ,title)
-				       ("data_type" . "BIBTEX")))))
-	 (buffer (bibretrieve-http url)))
-    (with-current-buffer buffer
-      ;; Remove useless fields
-      (goto-char (point-min))
-      (while (re-search-forward "^.*adsurl =.*\n" nil t)
-	(replace-match ""))
-      (goto-char (point-min))
-      (while (re-search-forward "^.*adsnote =.*\n" nil t)
-	(replace-match ""))
-      (goto-char (point-min))
-      (while (re-search-forward "^.*keywords =.*\n" nil t)
-	(replace-match ""))
-      (goto-char (point-min))
-      ; arxiv is not a journal, use misc type instead of article
-      (while (re-search-forward "^.*journal.*" nil t)
-	(replace-match "note = {Preprint}," 1))
-      (goto-char (point-min))
-      (while (re-search-forward "\"{" nil t)
-	(replace-match "{"))
-      (goto-char (point-min))
-      (while (re-search-forward "}\"" nil t)
-	(replace-match "}"))
-      ; generate readable citation keys
-      (goto-char (point-min))
-      (while (re-search-forward "@article.*$" nil t)
-	(let ((arxivid (save-match-data
-			 (save-excursion
-			   (re-search-forward "eprint = {\\([a-zA-Z\\.-]*/\\)?\\([0-9\\.]+\\)}" nil t)
-			   (match-string 2)
-			   ))))
-	  (message arxivid)
-	  (replace-match (concat "@misc{arxiv:" arxivid ",") 1)))
-;; Add archive prefix to old style identifiers
-      (goto-char (point-min))
-      (while (re-search-forward "^.*eprint = {math/" nil t)
-	(replace-match "archivePrefix = \"arXiv\",\neprint = {math/"))
-      buffer)))
+(defun bibretrieve-backend-ads (query)
+  (let* ((pairs `(("qsearch" . ,query)
+		  ("data_type" . "BIBTEX"))))
+  (bibretrieve-http (concat "http://adsabs.harvard.edu/cgi-bin/basic_connect?" (mm-url-encode-www-form-urlencoded pairs)))))
 
 ;; Modified from bibsnarf
-(defun bibretrieve-backend-citebase (author title)
-  (let* ((query (concat author " " title))
-	 (pairs `(("submitted" . "Search")
+(defun bibretrieve-backend-citebase (query)
+  (let* ((pairs `(("submitted" . "Search")
 		  ("query" . ,query)
 		  ("format" . "BibTeX")
 		  ("maxrows" . "100")
@@ -173,31 +115,21 @@
 		  )))
     (bibretrieve-http (concat "http://www.citebase.org/search?" (mm-url-encode-www-form-urlencoded pairs)))))
 
-(defun bibretrieve-backend-inspire (author title)
+(defun bibretrieve-backend-inspire (query)
   (let* ((pairs `(("ln" . "en")
-		  ("as" . "1")
-		  ("m1" . "a")
-		  ("op1" . "a")
-		  ("m2" . "a")
-		  ("op2" . "a")
-		  ("m3" . "a")
 		  ("action_search" . "Search")
-		  ("sf" . "year")
+		  ("sf" . "earliestdate")
 		  ("so" . "d")
-		  ("sc" . "0")
-		  ("p1" . ,author)
-		  ("f1" . "author")
-		  ("p2" . ,title)
-		  ("f2" . "title")
+		  ("p" . ,query)
 		  ("of" . "hx")
 		  ("rg" . "100"))))
   (bibretrieve-http (concat "http://inspirehep.net/search?" (mm-url-encode-www-form-urlencoded pairs)))))
 
-(defun bibretrieve-use-backend (backend author title timeout)
-  "Call the backend BACKEND with AUTHOR, TITLE and TIMEOUT. Return buffer with results."
+(defun bibretrieve-use-backend (backend query timeout)
+  "Call the backend BACKEND with QUERY and TIMEOUT. Return buffer with results."
   (let* ((function-backend (intern (concat "bibretrieve-backend-" backend))))
     (if (functionp function-backend)
-	(with-timeout (timeout) (funcall function-backend author title))
+	(with-timeout (timeout) (funcall function-backend query))
       (message (concat "Backend " backend " is not defined.")))))
 
 (defun bibretrieve-extract-bib-entries (buffers)
@@ -208,14 +140,14 @@ Return list with entries."
 	 (reftex-get-bibkey-default () "=")) ; Match all bib entries
     (reftex-extract-bib-entries buffers)))
 
-(defun bibretrieve-retrieve (author title backends &optional newtimeout)
-  "Search AUTHOR and TITLE on BACKENDS.
+(defun bibretrieve-retrieve (query backends &optional newtimeout)
+  "Search QUERY on BACKENDS.
 If NEWTIMEOUT is given, this replaces the timeout for all backends.
 Return list with entries."
   (let (buffers buffer found-list)
     (dolist (backend backends)
       (let* ((timeout (or (or newtimeout (cdr (assoc backend bibretrieve-backends))) "0"))
-	     (buffer (bibretrieve-use-backend backend author title timeout)))
+	     (buffer (bibretrieve-use-backend backend query timeout)))
 	(if (bufferp buffer)
 	    (add-to-list 'buffers buffer)
 	  (message (concat "Backend " backend " failed.")))))
@@ -224,14 +156,13 @@ Return list with entries."
 
 (defvar bibretrieve-author-history nil)
 (defun bibretrieve-prompt-and-retrieve (&optional arg)
-  "Prompt for author and title and retrieve.
+  "Prompt for query and retrieve.
 If the optional argument ARG is an integer
 then it is used as the timeout (in seconds).
 If the optional argument ARG is non-nil and not integer,
 prompt for the backends to use and the timeout.
 Return list with entries."
-  (let* ((author (completing-read "Author: " () nil nil nil 'bibretrieve-author-history))
-	 (title (read-string "Title: "))
+  (let* ((query (read-string "Query: "))
 	 backend backends timeout)
     (when arg
       (if (integerp arg)
@@ -245,7 +176,7 @@ Return list with entries."
 		 'bibretrieve-installed-backends)
 		(t
 		 `(,backend))))
-    (bibretrieve-retrieve author title backends timeout))
+    (bibretrieve-retrieve query backends timeout))
   )
 
 (defun bibretrieve-find-bibliography-file ()
@@ -457,7 +388,7 @@ ARG is the optional argument."
 (defun bibretrieve ()
   "Search the web for bibliography entries.
 
-After prompting for author and title, searches on the web, using the
+After prompting for query, searches on the web, using the
 backends specified by the customization variable
 `bibretrieve-backends'.  A selection process (using RefTeX Selection)
 allows to select entries to add to the current buffer or to a

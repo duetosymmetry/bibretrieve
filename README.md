@@ -1,4 +1,4 @@
-This is the README file for BibRetrieve.
+This is the README file for Leo's fork of BibRetrieve.
 
 Requirements
 ------------
@@ -7,11 +7,6 @@ Requirements
 
 Installation
 ------------
-
-The esiest way is to install from [MELPA](https://melpa.org/#/getting-started):
-[![MELPA](http://melpa.milkbox.net/packages/bibretrieve-badge.svg)](http://melpa.milkbox.net/#/bibretrieve)
-
-If you have to install manually and for development:
 
 * Clone the repository:
 
