@@ -162,8 +162,7 @@ then it is used as the timeout (in seconds).
 If the optional argument ARG is non-nil and not integer,
 prompt for the backends to use and the timeout.
 Return list with entries."
-  (let* ((query (read-string "Query: "))
-	 backend backends timeout)
+  (let* (query backend backends timeout)
     (when arg
       (if (integerp arg)
 	  (setq timeout arg)
@@ -176,6 +175,7 @@ Return list with entries."
 		 'bibretrieve-installed-backends)
 		(t
 		 `(,backend))))
+    (setq query (read-string "Query: "))
     (bibretrieve-retrieve query backends timeout))
   )
 
