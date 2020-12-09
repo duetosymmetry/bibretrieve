@@ -116,14 +116,10 @@
     (bibretrieve-http (concat "http://www.citebase.org/search?" (mm-url-encode-www-form-urlencoded pairs)))))
 
 (defun bibretrieve-backend-inspire (query)
-  (let* ((pairs `(("ln" . "en")
-		  ("action_search" . "Search")
-		  ("sf" . "earliestdate")
-		  ("so" . "d")
-		  ("p" . ,query)
-		  ("of" . "hx")
-		  ("rg" . "100"))))
-  (bibretrieve-http (concat "http://inspirehep.net/search?" (mm-url-encode-www-form-urlencoded pairs)))))
+  (let* ((pairs `(("q" . ,query)
+		  ("format" . "bibtex")
+		  ("size" . "1000"))))
+  (bibretrieve-http (concat "http://inspirehep.net/api/literature?" (mm-url-encode-www-form-urlencoded pairs)))))
 
 (defun bibretrieve-use-backend (backend query timeout)
   "Call the backend BACKEND with QUERY and TIMEOUT. Return buffer with results."
