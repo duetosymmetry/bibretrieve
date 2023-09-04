@@ -30,7 +30,7 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 (require 'reftex)
 (require 'reftex-cite)
 (require 'reftex-sel)
