@@ -132,8 +132,11 @@
   "Extract all bib entries from BUFFERS.
 BUFFERS is a list of buffers or file names.
 Return list with entries."
-  (flet ((reftex--query-search-regexps (default) nil) ; Do not ask for a REGEXP
-	 (reftex-get-bibkey-default () "=")) ; Match all bib entries
+  (cl-letf
+      (((symbol-function 'reftex--query-search-regexps)
+        (lambda (default) nil)) ; Do not ask for a REGEXP
+	     ((symbol-function 'reftex-get-bibkey-default)
+        (lambda () "="))) ; Match all bib entries
     (reftex-extract-bib-entries buffers)))
 
 (defun bibretrieve-retrieve (query backends &optional newtimeout)
